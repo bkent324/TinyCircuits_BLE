@@ -53,7 +53,6 @@ uint16_t UARTServHandle, UARTTXCharHandle, UARTRXCharHandle;
 
 TinyCircuits_BLE::TinyCircuits_BLE()
 {
-
 }
 
 TinyCircuits_BLE::~TinyCircuits_BLE()
@@ -69,7 +68,7 @@ int TinyCircuits_BLE::init()
   // /* Init SPI interface */
   BNRG_SPI_Init();
   /* Reset BlueNRG/BlueNRG-MS SPI interface */
-  BlueNRG_RST();
+  reset();
 
   uint8_t bdaddr[] = {0x12, 0x34, 0x00, 0xE1, 0x80, 0x02};
 
@@ -96,7 +95,7 @@ int TinyCircuits_BLE::init()
     PRINTF("GAP_Init failed.\n");
   }
 
-  const char *name = "TinyCircuitsBLE";
+  const char *name = "BlueNRG";
 
   ret = aci_gatt_update_char_value(service_handle, dev_name_char_handle, 0, strlen(name), (uint8_t *)name);
 
@@ -123,6 +122,50 @@ int TinyCircuits_BLE::init()
 
   /* +4 dBm output power */
   ret = aci_hal_set_tx_power_level(1, 3);
+}
+
+bool TinyCircuits_BLE::writeUART(char *msg)
+{
+  msg += '\0';
+  uint8_t bufSize = (uint8_t)strlen(msg);
+  return !libAciSendData(PIPE_UART_OVER_BTLE_UART_TX_TX, (uint8_t *)msg, bufSize);
+}
+
+bool TinyCircuits_BLE::available()
+{
+  aciLoop();
+  return (bool)ble_rx_buffer_len;
+}
+
+bool TinyCircuits_BLE::isConnected()
+{
+  return connected;
+}
+
+void TinyCircuits_BLE::reset()
+{
+  BlueNRG_RST();
+}
+
+uint8_t *TinyCircuits_BLE::getBuffer()
+{
+  ble_rx_buffer_len = 0;
+  return ble_rx_buffer;
+}
+
+void TinyCircuits_BLE::aciLoop()
+{
+  HCI_Process();
+  ble_connection_state = connected;
+  if (set_connectable)
+  {
+    setConnectable();
+    set_connectable = 0;
+  }
+  if (HCI_Queue_Empty())
+  {
+    //Enter_LP_Sleep_Mode();
+  }
 }
 
 uint8_t TinyCircuits_BLE::addUARTService(void)
@@ -152,7 +195,6 @@ uint8_t TinyCircuits_BLE::addUARTService(void)
 fail:
   PRINTF("Error while adding UART service.\n");
   return BLE_STATUS_ERROR;
-  // return 0x00;
 }
 
 void TinyCircuits_BLE::setConnectable(void)
@@ -173,65 +215,24 @@ void TinyCircuits_BLE::setConnectable(void)
     PRINTF("%d\n", (uint8_t)ret);
 }
 
-uint8_t TinyCircuits_BLE::writeUARTTx(char* TXdata, uint8_t datasize)
+uint8_t TinyCircuits_BLE::writeUARTTx(char *TXdata, uint8_t datasize)
 {
- tBleStatus ret;
+  tBleStatus ret;
 
- ret = aci_gatt_update_char_value(UARTServHandle, UARTRXCharHandle, 0, datasize, (uint8_t *)TXdata);
+  ret = aci_gatt_update_char_value(UARTServHandle, UARTRXCharHandle, 0, datasize, (uint8_t *)TXdata);
 
- if (ret != BLE_STATUS_SUCCESS) {
-   PRINTF("Error while updating UART characteristic.\n") ;
-   return BLE_STATUS_ERROR ;
- }
- return BLE_STATUS_SUCCESS;
-
-}
-
-uint8_t TinyCircuits_BLE::libAciSendData(uint8_t ignore, uint8_t* sendBuffer, uint8_t sendLength) {
- return !writeUARTTx((char*)sendBuffer, sendLength);
-}
-
-bool TinyCircuits_BLE::writeUART(char* msg)
-{
-  msg += '\0';
-  uint8_t bufSize = (uint8_t)strlen(msg);
-  return !libAciSendData(PIPE_UART_OVER_BTLE_UART_TX_TX, (uint8_t*)msg, bufSize);
-
-  // return false;
-}
-
-void TinyCircuits_BLE::aciLoop()
-{
-  HCI_Process();
-  ble_connection_state = connected;
-  if (set_connectable)
+  if (ret != BLE_STATUS_SUCCESS)
   {
-    setConnectable();
-    set_connectable = 0;
+    PRINTF("Error while updating UART characteristic.\n");
+    return BLE_STATUS_ERROR;
   }
-  if (HCI_Queue_Empty())
-  {
-    //Enter_LP_Sleep_Mode();
-  }
+  return BLE_STATUS_SUCCESS;
 }
 
-bool TinyCircuits_BLE::available()
+uint8_t TinyCircuits_BLE::libAciSendData(uint8_t ignore, uint8_t *sendBuffer, uint8_t sendLength)
 {
-  aciLoop();
-  return (bool)ble_rx_buffer_len;
+  return !writeUARTTx((char *)sendBuffer, sendLength);
 }
-
-bool TinyCircuits_BLE::isConnected()
-{
-  return connected;
-}
-
-uint8_t * TinyCircuits_BLE::getBuffer()
-{
-  ble_rx_buffer_len = 0;
-  return ble_rx_buffer;
-}
-
 
 /*********************************************************************************************************************/
 /*********************************************************************************************************************/
@@ -241,14 +242,16 @@ uint8_t * TinyCircuits_BLE::getBuffer()
 
 void Attribute_Modified_CB(uint16_t handle, uint8_t data_length, uint8_t *att_data)
 {
- if (handle == UARTTXCharHandle + 1) {
-   int i;
-   for (i = 0; i < data_length; i++) {
-     ble_rx_buffer[i] = att_data[i];
-   }
-   ble_rx_buffer[i] = '\0';
-   ble_rx_buffer_len = data_length;
- }
+  if (handle == UARTTXCharHandle + 1)
+  {
+    int i;
+    for (i = 0; i < data_length; i++)
+    {
+      ble_rx_buffer[i] = att_data[i];
+    }
+    ble_rx_buffer[i] = '\0';
+    ble_rx_buffer_len = data_length;
+  }
 }
 
 void GAP_ConnectionComplete_CB(uint8_t addr[6], uint16_t handle)
@@ -275,7 +278,7 @@ void GAP_DisconnectionComplete_CB(void)
 
 void Read_Request_CB(uint16_t handle)
 {
- /*if(handle == UARTTXCharHandle + 1)
+  /*if(handle == UARTTXCharHandle + 1)
    {
 
    }
@@ -285,8 +288,8 @@ void Read_Request_CB(uint16_t handle)
 
    }*/
 
- if (connection_handle != 0)
-   aci_gatt_allow_read(connection_handle);
+  if (connection_handle != 0)
+    aci_gatt_allow_read(connection_handle);
 }
 
 void HCI_Event_CB(void *pckt)
@@ -346,5 +349,4 @@ void HCI_Event_CB(void *pckt)
   }
   break;
   }
-}
-;
+};

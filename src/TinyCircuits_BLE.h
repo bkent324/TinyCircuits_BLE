@@ -14,17 +14,18 @@
 #include "arduino_hal.h"
 
 #ifdef __cplusplus
- extern "C" {
+extern "C"
+{
 #endif
-	#include "STBlueNRG/bluenrg_utils.h"
-	#include "STBlueNRG/hal_types.h"
-	#include "STBlueNRG/ble_status.h"
-	#include "STBlueNRG/hci.h"
-	#include "STBlueNRG/hci_le.h"
-	#include "STBlueNRG/bluenrg_aci.h"
-	#include "STBlueNRG/gp_timer.h"
-	#include "STBlueNRG/bluenrg_gap.h"
-	#include "STBlueNRG/sm.h"
+#include "STBlueNRG/bluenrg_utils.h"
+#include "STBlueNRG/hal_types.h"
+#include "STBlueNRG/ble_status.h"
+#include "STBlueNRG/hci.h"
+#include "STBlueNRG/hci_le.h"
+#include "STBlueNRG/bluenrg_aci.h"
+#include "STBlueNRG/gp_timer.h"
+#include "STBlueNRG/bluenrg_gap.h"
+#include "STBlueNRG/sm.h"
 #ifdef __cplusplus
 }
 #endif
@@ -43,15 +44,15 @@ public:
 
   int init();
   bool isConnected();
-  bool writeUART(char* msg);
+  bool writeUART(char *msg);
   bool available();
-  bool reset();
+  void reset();
   uint8_t *getBuffer();
 
 private:
   void aciLoop();
   uint8_t addUARTService(void);
   void setConnectable(void);
-  uint8_t writeUARTTx(char* TXdata, uint8_t datasize);
-  uint8_t libAciSendData(uint8_t ignore, uint8_t* sendBuffer, uint8_t sendLength);
+  uint8_t writeUARTTx(char *TXdata, uint8_t datasize);
+  uint8_t libAciSendData(uint8_t ignore, uint8_t *sendBuffer, uint8_t sendLength);
 };

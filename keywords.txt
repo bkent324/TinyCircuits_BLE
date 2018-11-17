@@ -1,0 +1,32 @@
+#######################################
+# Syntax Coloring Map For TinyCircuits_BLE
+#######################################
+
+#######################################
+# Datatypes (KEYWORD1)
+#######################################
+
+TinyCircuits_BLE	KEYWORD1
+
+#######################################
+# Methods and Functions (KEYWORD2)
+#######################################
+
+init	KEYWORD2
+isConnected	KEYWORD2
+writeUART	KEYWORD2
+available	KEYWORD2
+reset	KEYWORD2
+getBuffer	KEYWORD2
+aciLoop	KEYWORD2
+addUARTService	KEYWORD2
+setConnectable	KEYWORD2
+writeUARTTx	KEYWORD2
+libAciSendData	KEYWORD2
+
+#######################################
+# Constants (LITERAL1)
+#######################################
+
+BLE_DEBUG LITERAL1
+
