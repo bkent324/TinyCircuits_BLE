@@ -1,4 +1,4 @@
-#include "TInyCircuits_BLE.h"
+#include "TinyCircuits_BLE.h"
 
 #if BLE_DEBUG
 #include <stdio.h>
@@ -65,7 +65,7 @@ int TinyCircuits_BLE::init()
   int ret;
 
   HCI_Init();
-  // /* Init SPI interface */
+  /* Init SPI interface */
   BNRG_SPI_Init();
   /* Reset BlueNRG/BlueNRG-MS SPI interface */
   reset();
@@ -122,6 +122,11 @@ int TinyCircuits_BLE::init()
 
   /* +4 dBm output power */
   ret = aci_hal_set_tx_power_level(1, 3);
+
+  // run loop once to set as connectable
+  aciLoop();
+
+  return ret;
 }
 
 bool TinyCircuits_BLE::writeUART(char *msg)
@@ -201,7 +206,7 @@ void TinyCircuits_BLE::setConnectable(void)
 {
   tBleStatus ret;
 
-  const char local_name[] = {AD_TYPE_COMPLETE_LOCAL_NAME, 'B', 'l', 'u', 'e', 'N', 'R', 'G'};
+  const char local_name[] = {AD_TYPE_COMPLETE_LOCAL_NAME, 'T', 'i', 'n', 'y', 'C', 'i', 'r', 'c', 'u', 'i', 't', 's'};
 
   hci_le_set_scan_resp_data(0, NULL);
   PRINTF("General Discoverable Mode.\n");
@@ -235,9 +240,7 @@ uint8_t TinyCircuits_BLE::libAciSendData(uint8_t ignore, uint8_t *sendBuffer, ui
 }
 
 /*********************************************************************************************************************/
-/*********************************************************************************************************************/
 /*************************************************** global callbacks ************************************************/
-/*********************************************************************************************************************/
 /*********************************************************************************************************************/
 
 void Attribute_Modified_CB(uint16_t handle, uint8_t data_length, uint8_t *att_data)

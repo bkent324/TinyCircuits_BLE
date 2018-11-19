@@ -1,8 +1,10 @@
+#pragma once
+
+// Debug output adds extra flash and memory requirements!
 #ifndef BLE_DEBUG
 #define BLE_DEBUG true
 #endif
 
-// #include "TInyCircuits_BLE.h"
 #include "Arduino.h"
 #include "STBlueNRG\hci.h"
 #include "arduino_bluenrg_ble.h"
